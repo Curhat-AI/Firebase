@@ -44,12 +44,16 @@ export const onUserCreate = functions
     return logger.info(`User ${user.uid} created with custom claims`);
   });
 
-    // const customClaims = {
-    //   admin: false,
-    //   editor: false,
-    //   subscriber: true,
-    // };
-    // await admin.auth().setCustomUserClaims(user.uid, customClaims);
+export const changeUserRole = functions
+  .region("asia-southeast2")
+  .firestore.document("users/{userId}")
+  .onUpdate(async (change, context) => {
+    const {before, after} = change;
+    const {userId} = context.params;
 
-    // return logger.info(`User ${user.uid} created with custom claims`);
+    // check if role changed
+    if (before.data().roles !== after.data().roles) {
+      // set custom claims
+      await admin.auth().setCustomUserClaims(userId, after.data().roles);
+    }
   });
