@@ -9,6 +9,9 @@
 
 import {onRequest} from "firebase-functions/v2/https";
 import * as functions from "firebase-functions/v1";
+import {
+  beforeUserCreated,
+} from "firebase-functions/v2/identity";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -22,27 +25,33 @@ admin.initializeApp();
 //   response.send('Hello from Firebase!');
 // });
 
-export const onUserCreate = functions
-  .region("asia-southeast2")
-  .auth.user()
-  .onCreate(async (user) => {
-    const roles = {
-      patient: false,
-      counselor: false,
-    };
+export const userWillCreated = beforeUserCreated(async (event) => {
+  const user = event.data;
+  const roles = {
+    patient: false,
+    counselor: false,
+  };
     // add to firestore
-    const userDoc = admin.firestore().collection("users").doc(user.uid);
-    await userDoc.set({
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      roles,
-    });
+  const userDoc = admin.firestore().collection("users").doc(user.uid);
+  await Promise.all([
+    userDoc.create(
+      {
+        email: user.email,
+        displayName: user.displayName || user.email?.split("@")[0],
+        photoURL: user.photoURL || "",
+        roles,
+        details: {
+          dob: null,
+          gender: null,
+          photoUrl: null,
+          phone: null,
+        },
+      }
+    ),
+  ]);
 
-    await admin.auth().setCustomUserClaims(user.uid, roles);
-
-    return logger.info(`User ${user.uid} created with custom claims`);
-  });
+  return logger.info(`User ${user.uid} created with custom claims`);
+});
 
 export const changeUserRole = functions
   .region("asia-southeast2")
