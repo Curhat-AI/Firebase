@@ -9,12 +9,16 @@
 
 import {onRequest} from "firebase-functions/v2/https";
 import * as functions from "firebase-functions/v1";
+import {setGlobalOptions} from "firebase-functions/v2";
 import {
   beforeUserCreated,
 } from "firebase-functions/v2/identity";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
+setGlobalOptions({
+  region: "asia-southeast2",
+});
 admin.initializeApp();
 
 // Start writing functions
